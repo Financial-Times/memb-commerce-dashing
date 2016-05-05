@@ -9,6 +9,7 @@ user = ENV['PINGDOM_USER'] || ''
 password = ENV['PINGDOM_PASSWORD'] || ''
 alsAuth = ENV['ALS_AUTH'] || ''
 alsId = ENV['ALS_ID'] || ''
+offerHeader = ENV['OFFER_HEADER'] || ''
 offerAuth = ENV['OFFER_AUTH'] || ''
 offerId = ENV['OFFER_ID'] || ''
 acsAuth = ENV['ACS_AUTH'] || ''
@@ -33,26 +34,6 @@ def performCheckAndSendEventToWidgets(widgetId, urlHostName, urlPath, authKey)
   else
     send_event(widgetId, {value: 'danger', status: 'unavailable' })
   end
-
-  #if tlsEnabled
-  #  http = Net::HTTP.new(urlHostName, 443)
-  #  http.use_ssl = true
-  #else
-  #  http = Net::HTTP.new(urlHostName, 80)
-  #end
-  ##url = urlHostName
-  ##response = RestClient.get(url)
-  #response = http.request(Net::HTTP::Get.new(urlPath))
-  ##json = JSON.parse(response)
-  ##state = json[:state]
-
-  ##if state == 'Good To Go'  
-  #if response.code == '200'
-  #  send_event(widgetId, { value: 'ok', status: 'available' })
-  #else
-  #  send_event(widgetId, { value: 'danger', status: 'unavailable' })
-  #end
-
 end
 
 def getUptimeMetricsFromPingdom(checkId, apiKey, user, password)
@@ -62,8 +43,12 @@ def getUptimeMetricsFromPingdom(checkId, apiKey, user, password)
   lastTime = (Time.now.to_i - timeInSecond )
 
   urlUptime = "https://#{CGI::escape user}:#{CGI::escape password}@api.pingdom.com/api/2.0/summary.average/#{checkId}?from=#{lastTime}&includeuptime=true"
+
   responseUptime = RestClient.get(urlUptime, {"App-Key" => apiKey, "Account-Email" => "ftpingdom@ft.com"})
   responseUptime = JSON.parse(responseUptime.body, :symbolize_names => true)
+
+  avgResponseTime = responseUptime[:summary][:responsetime][:avgresponse]
+  send_event(checkId+"resp", { current: avgResponseTime, status: 'uptime-999-or-above'})
 
   totalUp = responseUptime[:summary][:status][:totalup]
   totalDown = responseUptime[:summary][:status][:totaldown]
@@ -91,9 +76,9 @@ def checkMembershipObject(widgetId, service, path, authKey, objectId)
 
 end
 
-def checkOffer(widgetId, service, path, authKey, objectId)
+def checkOffer(widgetId, service, path, authHeader, authKey, objectId)
   url = "https://#{CGI::escape service}.memb.ft.com"+path+objectId 
-  response = RestClient.get(url, {"X-remclisf" => authKey})
+  response = RestClient.get(url, {authHeader => authKey})
   #responseBody = JSON.parse(response.body, :symbolize_names => true)
   responseCode = response.code
 
@@ -113,7 +98,7 @@ SCHEDULER.every '10s', first_in: 0 do |job|
   getUptimeMetricsFromPingdom('2014311', apiKey, user, password)
   getUptimeMetricsFromPingdom('2014309', apiKey, user, password)
   checkMembershipObject('als','acc-licence-svc', '/membership/licences/v1/', alsAuth, alsId)
-  checkOffer('offerapi','offer-api', '/membership/offers/v1/', offerAuth, offerId)
+  checkOffer('offerapi','offer-api', '/membership/offers/v1/', offerHeader, offerAuth, offerId)
   checkMembershipObject('acs','acq-context-svc', '/acquisition-contexts/v1/', acsAuth, acsId)
   checkMembershipObject('rts','redeem-token-svc', '/redeemable-tokens/v1/', rtsAuth, rtsId)
   getUptimeMetricsFromPingdom('2109418', apiKey, user, password)
