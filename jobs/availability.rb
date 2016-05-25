@@ -16,6 +16,9 @@ acsAuth = ENV['ACS_AUTH'] || ''
 acsId = ENV['ACS_ID'] || ''
 rtsAuth = ENV['RTS_AUTH'] || ''
 rtsId = ENV['RTS_ID'] || ''
+subsHeader = ENV['SUBS_HEADER'] || ''
+subsAuth = ENV['SUBS_AUTH'] || ''
+subsId = ENV['SUBS_ID'] || ''
 
 def performCheckAndSendEventToWidgets(widgetId, urlHostName, urlPath, authKey)
 
@@ -76,7 +79,7 @@ def checkMembershipObject(widgetId, service, path, authKey, objectId)
 
 end
 
-def checkOffer(widgetId, service, path, authHeader, authKey, objectId)
+def checkMembershipObjectWithHeader(widgetId, service, path, authHeader, authKey, objectId)
   url = "https://#{CGI::escape service}.memb.ft.com"+path+objectId 
   response = RestClient.get(url, {authHeader => authKey})
   #responseBody = JSON.parse(response.body, :symbolize_names => true)
@@ -91,20 +94,16 @@ def checkOffer(widgetId, service, path, authHeader, authKey, objectId)
 end
 SCHEDULER.every '10s', first_in: 0 do |job|
 
-  performCheckAndSendEventToWidgets('alsglobal', 'acc-licence-svc.memb.ft.com', '/__gtg', alsAuth)
-  performCheckAndSendEventToWidgets('alseu', 'acc-licence-svc-euwest1-prod.memb.ft.com', '/__gtg', alsAuth)
-  performCheckAndSendEventToWidgets('alsus', 'acc-licence-svc-useast1-prod.memb.ft.com', '/__gtg', alsAuth)
-  getUptimeMetricsFromPingdom('2014224', apiKey, user, password)
-  getUptimeMetricsFromPingdom('2014311', apiKey, user, password)
-  getUptimeMetricsFromPingdom('2014309', apiKey, user, password)
   checkMembershipObject('als','acc-licence-svc', '/membership/licences/v1/', alsAuth, alsId)
-  checkOffer('offerapi','offer-api', '/membership/offers/v1/', offerHeader, offerAuth, offerId)
+  checkMembershipObjectWithHeader('offerapi','offer-api', '/membership/offers/v1/', offerHeader, offerAuth, offerId)
   checkMembershipObject('acs','acq-context-svc', '/acquisition-contexts/v1/', acsAuth, acsId)
   checkMembershipObject('rts','redeem-token-svc', '/redeemable-tokens/v1/', rtsAuth, rtsId)
+  checkMembershipObjectWithHeader('subs','subscription-api-gw-eu-west-1-prod', '/subscriptions?userId=', subsHeader, subsAuth, subsId)
   getUptimeMetricsFromPingdom('2109418', apiKey, user, password)
   getUptimeMetricsFromPingdom('1694251', apiKey, user, password)
   getUptimeMetricsFromPingdom('2109444', apiKey, user, password)
   getUptimeMetricsFromPingdom('2110970', apiKey, user, password)
+  getUptimeMetricsFromPingdom('2160233', apiKey, user, password)
   
 
 end
