@@ -19,6 +19,7 @@ rtsId = ENV['RTS_ID'] || ''
 subsHeader = ENV['SUBS_HEADER'] || ''
 subsAuth = ENV['SUBS_AUTH'] || ''
 subsId = ENV['SUBS_ID'] || ''
+apiId = ENV['API_ID'] || ''
 
 def performCheckAndSendEventToWidgets(widgetId, urlHostName, urlPath, authKey)
 
@@ -92,6 +93,22 @@ def checkMembershipObjectWithHeader(widgetId, service, path, authHeader, authKey
   end
 
 end
+
+def checkMembershiObjectViaAWS(widgetId, service, apiId)
+  url = "https://#{CGI::escape apiId}.execute-api.eu-west-1.amazonaws.com/prod/getServiceResponse"
+  payload = { 'service' => service}
+  encoded = JSON.generate(payload)
+  header = { 'Content-Type' => 'application/json' }
+  response = RestClient.post(url, encoded, header)
+  responseBody = JSON.parse(response.body, :symbolize_names => true)
+  responseCode = responseBody[:status_code]
+  if responseCode == 200
+    send_event(widgetId, {value: 'ok', status: 'available'})
+  else
+    send_event(widgetId, {value: 'danger', status: 'unavailable' })
+  end
+
+end
 SCHEDULER.every '10s', first_in: 0 do |job|
 
   checkMembershipObject('als','acc-licence-svc', '/membership/licences/v1/', alsAuth, alsId)
@@ -99,12 +116,15 @@ SCHEDULER.every '10s', first_in: 0 do |job|
   checkMembershipObject('acs','acq-context-svc', '/acquisition-contexts/v1/', acsAuth, acsId)
   checkMembershipObject('rts','redeem-token-svc', '/redeemable-tokens/v1/', rtsAuth, rtsId)
   checkMembershipObjectWithHeader('subs','subscription-api-gw-eu-west-1-prod', '/subscriptions?userId=', subsHeader, subsAuth, subsId)
+  checkMembershiObjectViaAWS('uds','user-details-svc', apiId)
+  checkMembershiObjectViaAWS('pms','payment-mthd-svc', apiId)
   getUptimeMetricsFromPingdom('2109418', apiKey, user, password)
   getUptimeMetricsFromPingdom('1694251', apiKey, user, password)
   getUptimeMetricsFromPingdom('2109444', apiKey, user, password)
   getUptimeMetricsFromPingdom('2110970', apiKey, user, password)
   getUptimeMetricsFromPingdom('2160233', apiKey, user, password)
-  
+  getUptimeMetricsFromPingdom('2275954', apiKey, user, password)
+  getUptimeMetricsFromPingdom('2286018', apiKey, user, password)
 
 end
 
