@@ -20,6 +20,9 @@ subsHeader = ENV['SUBS_HEADER'] || ''
 subsAuth = ENV['SUBS_AUTH'] || ''
 subsId = ENV['SUBS_ID'] || ''
 apiId = ENV['API_ID'] || ''
+udsHeader = ENV['UDS_HEADER'] || ''
+udsAuth = ENV['UDS_AUTH'] || ''
+udsId = ENV['UDS_ID'] || ''
 
 def performCheckAndSendEventToWidgets(widgetId, urlHostName, urlPath, authKey)
 
@@ -116,8 +119,8 @@ SCHEDULER.every '10s', first_in: 0 do |job|
   checkMembershipObject('acs','acq-context-svc', '/acquisition-contexts/v1/', acsAuth, acsId)
   checkMembershipObject('rts','redeem-token-svc', '/redeemable-tokens/v1/', rtsAuth, rtsId)
   checkMembershipObjectWithHeader('subs','subscription-api-gw-eu-west-1-prod', '/subscriptions?userId=', subsHeader, subsAuth, subsId)
-  checkMembershiObjectViaAWS('uds','user-details-svc', apiId)
   checkMembershiObjectViaAWS('pms','payment-mthd-svc', apiId)
+  checkMembershipObjectWithHeader('uds','user-details-svc-glb', '/view-user-details?userId=', udsHeader, udsAuth, udsId)
   getUptimeMetricsFromPingdom('2109418', apiKey, user, password)
   getUptimeMetricsFromPingdom('1694251', apiKey, user, password)
   getUptimeMetricsFromPingdom('2109444', apiKey, user, password)
